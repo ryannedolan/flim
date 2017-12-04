@@ -8,9 +8,4 @@ e.g.
     -> []interface{}{40425}
 
 
-You can also apply normal Go functions:
-
-    odds := fl.Range(1, 100).FilterF(func (x interface{}) bool { return math.Remainder(x, 2) == 0 } )
-    for i := range odds {
-      fmt.Println(i)
-    }
+You can also apply normal Go functions: [example](samples/evens.go)
