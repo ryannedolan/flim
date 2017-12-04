@@ -43,7 +43,6 @@ func TestFloatFilter(t *testing.T) {
 }
 
 func TestFloatMapFilterFold(t *testing.T) {
-	arr := []float64{1.0, 2.0, 3.0, 4.0}
-	res := Floats(arr).Filter(` x <= 3 `).Map(` x*x `).Fold(0, ` x + y `).Force()
+	res := Range(1, 4).Filter(` x <= 3 `).Map(` x*x `).Fold(0, ` x + y `).Force()
 	assertEquals(t, res, []interface{}{14})
 }

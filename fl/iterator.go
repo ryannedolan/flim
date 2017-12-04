@@ -60,6 +60,17 @@ func (it *Iterator) Force() []interface{} {
 	return res
 }
 
+func (it *Iterator) Chan() chan interface{} {
+  ch := make(chan interface{}, 0)
+  go func() {
+    for it.Next() {
+      ch <- it.Pos()
+    }
+    close(ch)
+  } ()
+  return ch
+}
+
 func (it *chanIterable) Next() bool {
 	a, ok := <-it.ch
 	it.pos = a
