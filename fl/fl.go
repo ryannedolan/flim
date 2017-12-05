@@ -31,12 +31,7 @@ func XYZ(x interface{}, y interface{}, z interface{}) *env {
 	return &env{X: x, Y: y, Z: z}
 }
 
-// evaluate an expression in the given env
-func Eval(expr string, e *env) interface{} {
-	return compileString(expr)(e)
-}
-
-func compileString(s string) func(*env) interface{} {
+func Lambda(s string) func(*env) interface{} {
 	e, err := parser.ParseExpr(s)
 	if err != nil {
 		panic(err)

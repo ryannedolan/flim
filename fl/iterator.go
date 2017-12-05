@@ -24,21 +24,21 @@ type chanIterable struct {
 }
 
 func (it *Iterator) Map(expr string) *Iterator {
-	f := compileString(expr)
+	f := Lambda(expr)
 	return it.MapF(func(x interface{}) interface{} {
 		return f(X(x))
 	})
 }
 
 func (it *Iterator) Filter(expr string) *Iterator {
-	f := compileString(expr)
+	f := Lambda(expr)
 	return it.FilterF(func(x interface{}) bool {
 		return asBool(f(X(x)))
 	})
 }
 
 func (it *Iterator) Fold(z interface{}, expr string) *Iterator {
-	f := compileString(expr)
+	f := Lambda(expr)
 	return it.FoldF(z, func(x interface{}, y interface{}) interface{} {
 		return f(XY(x, y))
 	})
