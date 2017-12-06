@@ -10,10 +10,10 @@ import (
 // slowly prints even numbers
 func main() {
 
-	evens := fl.Range(1, 100).FilterF(
-		func(x interface{}) bool {
+	evens := fl.Range(1, 100).Filter(
+		func(x float64) bool {
 			time.Sleep(100000000)
-			return math.Remainder(float64(x.(int)), float64(2)) == 0
+			return math.Remainder(x, 2) == 0
 		}).Chan()
 
 	for i := range evens {
