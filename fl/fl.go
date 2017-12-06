@@ -16,17 +16,17 @@ type env struct {
 	Z interface{}
 }
 
-// construct a env with X = x
+// construct an env with X = x
 func X(x interface{}) *env {
 	return &env{X: x}
 }
 
-// construct a env with X = x, Y = y
+// construct an env with X = x, Y = y
 func XY(x interface{}, y interface{}) *env {
 	return &env{X: x, Y: y}
 }
 
-// construct a env with X = x, Y = y, Z = z
+// construct an env with X = x, Y = y, Z = z
 func XYZ(x interface{}, y interface{}, z interface{}) *env {
 	return &env{X: x, Y: y, Z: z}
 }

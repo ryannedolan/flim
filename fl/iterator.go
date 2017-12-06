@@ -162,11 +162,11 @@ func eraseF1(f interface{}) func(interface{}) interface{} {
 		return f.(func(interface{}) interface{})
 	case func(float64) float64:
 		return func(x interface{}) interface{} {
-			return f.(func(float64) float64)(x.(float64))
+			return f.(func(float64) float64)(asFloat64(x))
 		}
 	case func(int) int:
 		return func(x interface{}) interface{} {
-			return f.(func(int) int)(x.(int))
+			return f.(func(int) int)(asInt(x))
 		}
 	case func(float64) bool:
 		return func(x interface{}) interface{} {
@@ -174,7 +174,7 @@ func eraseF1(f interface{}) func(interface{}) interface{} {
 		}
 	case func(int) bool:
 		return func(x interface{}) interface{} {
-			return f.(func(int) bool)(x.(int))
+			return f.(func(int) bool)(asInt(x))
 		}
 	case func(string) bool:
 		return func(x interface{}) interface{} {
@@ -199,7 +199,7 @@ func eraseF2(f interface{}) func(interface{}, interface{}) interface{} {
 		}
 	case func(int, int) int:
 		return func(x interface{}, y interface{}) interface{} {
-			return f.(func(int, int) int)(x.(int), y.(int))
+			return f.(func(int, int) int)(asInt(x), asInt(y))
 		}
 	case func(float64, float64) bool:
 		return func(x interface{}, y interface{}) interface{} {
@@ -207,7 +207,7 @@ func eraseF2(f interface{}) func(interface{}, interface{}) interface{} {
 		}
 	case func(int, int) bool:
 		return func(x interface{}, y interface{}) interface{} {
-			return f.(func(int, int) bool)(x.(int), y.(int))
+			return f.(func(int, int) bool)(asInt(x), asInt(y))
 		}
 	case func(string, string) bool:
 		return func(x interface{}, y interface{}) interface{} {
