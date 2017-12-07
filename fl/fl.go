@@ -6,8 +6,8 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"reflect"
 	"strconv"
-  "reflect"
 )
 
 // limited to a small number of values to avoid map lookups
@@ -38,10 +38,10 @@ func Lambda(s string) func(*env) interface{} {
 		panic(err)
 	}
 	res := compile(e)
-  if res == nil {
-    panic(fmt.Errorf("dunno how to compile %s", s))
-  }
-  return res
+	if res == nil {
+		panic(fmt.Errorf("dunno how to compile %s", s))
+	}
+	return res
 }
 
 func compile(e ast.Expr) func(*env) interface{} {
@@ -52,12 +52,12 @@ func compile(e ast.Expr) func(*env) interface{} {
 		return basicLit(e.(*ast.BasicLit))
 	case *ast.Ident:
 		return ident(e.(*ast.Ident))
-  case *ast.SelectorExpr:
-    return selectorExpr(e.(*ast.SelectorExpr))
-  case *ast.CallExpr:
-    return callExpr(e.(*ast.CallExpr))
+	case *ast.SelectorExpr:
+		return selectorExpr(e.(*ast.SelectorExpr))
+	case *ast.CallExpr:
+		return callExpr(e.(*ast.CallExpr))
 	default:
-    return nil
+		return nil
 	}
 }
 
@@ -116,13 +116,13 @@ func lookup(ident string) func(e *env) interface{} {
 }
 
 func selectorLookup(x interface{}, name string) interface{} {
-  v := reflect.ValueOf(x)
-  field := v.FieldByName(name)
-  if field == (reflect.Value{}) {
-    // maybe it's a method instead of a field
-    return v.MethodByName(name).Interface()
-  }
-  return field.Interface() 
+	v := reflect.ValueOf(x)
+	field := v.FieldByName(name)
+	if field == (reflect.Value{}) {
+		// maybe it's a method instead of a field
+		return v.MethodByName(name).Interface()
+	}
+	return field.Interface()
 }
 
 func asString(a interface{}) string {
@@ -185,41 +185,41 @@ func binaryExpr(a *ast.BinaryExpr) func(*env) interface{} {
 }
 
 func selectorExpr(a *ast.SelectorExpr) func(*env) interface{} {
-  x := compile(a.X)
-  return func(e *env) interface{} {
-    return selectorLookup(x(e), a.Sel.Name)
-  }
+	x := compile(a.X)
+	return func(e *env) interface{} {
+		return selectorLookup(x(e), a.Sel.Name)
+	}
 }
 
 func callExpr(a *ast.CallExpr) func(*env) interface{} {
-  f := compile(a.Fun)
-  args := make([]func(*env) interface{}, len(a.Args))
-  for _, arg := range a.Args {
-    args = append(args, compile(arg))
-  }
-  return func(e *env) interface{} {
-    vals := make([]reflect.Value, len(args))
-    for i, v := range args {
-      vals[i] = reflect.ValueOf(v(e))
-    }
-    return callFunc(f(e), vals)
-  }
+	f := compile(a.Fun)
+	args := make([]func(*env) interface{}, len(a.Args))
+	for _, arg := range a.Args {
+		args = append(args, compile(arg))
+	}
+	return func(e *env) interface{} {
+		vals := make([]reflect.Value, len(args))
+		for i, v := range args {
+			vals[i] = reflect.ValueOf(v(e))
+		}
+		return callFunc(f(e), vals)
+	}
 }
 
 func callFunc(f interface{}, args []reflect.Value) interface{} {
-  v := reflect.ValueOf(f)
-  vals := v.Call(args)
-  if len(vals) == 0 {
-    return nil
-  }
-  if len(vals) == 1 {
-    return vals[0]
-  }
-  res := make([]interface{}, len(vals))
-  for i, v := range vals {
-    res[i] = v.Interface()
-  }
-  return res
+	v := reflect.ValueOf(f)
+	vals := v.Call(args)
+	if len(vals) == 0 {
+		return nil
+	}
+	if len(vals) == 1 {
+		return vals[0]
+	}
+	res := make([]interface{}, len(vals))
+	for i, v := range vals {
+		res[i] = v.Interface()
+	}
+	return res
 }
 
 func add(a interface{}, b interface{}) interface{} {
