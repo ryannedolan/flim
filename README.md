@@ -9,13 +9,13 @@ Flim turns strings like "x+y" into lambdas:
 
 You can apply lambdas to chans:
 
-    fl.Range(1, 100).Filter(`x < 50`).Map(`x*x`).Fold(0, `x + y`).Force()
+    fl.Range(1, 100).Filter(`x < 50`).Map(`x*x`).Fold(0, `x + y`).Array()
     -> {40425}
 
 You can also apply normal Go functions:
 
     items := []int{1, 2, 3, 4}
-    fl.Iter(items).Map(func (i int) int { return i + 1 }).Force()
+    fl.Iter(items).Map(func (i int) int { return i + 1 }).Array()
     -> {2, 3, 4, 5}
 
 
