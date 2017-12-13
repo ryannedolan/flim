@@ -19,6 +19,17 @@ type chanIterable struct {
 	pos interface{}
 }
 
+type node struct {
+	next *node
+	v    interface{}
+}
+
+type listIterable struct {
+	*Iterator
+	head *node
+	v    interface{}
+}
+
 func (it *Iterator) Map(arg interface{}) *Iterator {
 	switch arg.(type) {
 	case string:
@@ -46,6 +57,14 @@ func (it *Iterator) Fold(a interface{}, arg interface{}) *Iterator {
 	}
 }
 
+func (it *Iterator) Reverse() *Iterator {
+	list := EmptyList()
+	for it.Next() {
+		list.Push(it.Pos())
+	}
+	return &Iterator{list}
+}
+
 func (it *Iterator) Floats() []float64 {
 	res := make([]float64, 0)
 	for it.Next() {
@@ -54,7 +73,7 @@ func (it *Iterator) Floats() []float64 {
 	return res
 }
 
-func (it *Iterator) Force() []interface{} {
+func (it *Iterator) Array() []interface{} {
 	res := make([]interface{}, 0)
 	for it.Next() {
 		res = append(res, it.Pos())
@@ -62,7 +81,7 @@ func (it *Iterator) Force() []interface{} {
 	return res
 }
 
-func (it *Iterator) Chan() chan interface{} {
+func (it *listIterable) Chan() chan interface{} {
 	ch := make(chan interface{}, 0)
 	go func() {
 		for it.Next() {
@@ -73,6 +92,14 @@ func (it *Iterator) Chan() chan interface{} {
 	return ch
 }
 
+func (it *chanIterable) List() *Iterator {
+	list := EmptyList()
+	for it.Next() {
+		list.Push(it.Pos())
+	}
+	return &Iterator{list}
+}
+
 func (it *chanIterable) Next() bool {
 	a, ok := <-it.ch
 	it.pos = a
@@ -81,6 +108,36 @@ func (it *chanIterable) Next() bool {
 
 func (it chanIterable) Pos() interface{} {
 	return it.pos
+}
+
+func (it *listIterable) Next() bool {
+	if it.head == nil {
+		return false
+	}
+	it.v = it.head.v
+	it.head = it.head.next
+	return true
+}
+
+func (it *listIterable) Push(v interface{}) {
+	n := &node{next: it.head, v: v}
+	it.head = n
+}
+
+func (it listIterable) Pos() interface{} {
+	return it.v
+}
+
+func List(arr []interface{}) *Iterator {
+	list := EmptyList()
+	for i := len(arr) - 1; i >= 0; i-- {
+		list.Push(arr[i])
+	}
+	return &Iterator{list}
+}
+
+func EmptyList() *listIterable {
+	return &listIterable{}
 }
 
 func Range(i int, j int) *Iterator {
