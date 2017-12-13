@@ -20,7 +20,9 @@ func main() {
 	f := lambda.X(`x.Age`)
 	g := lambda.X(`x.F()`)
 	h := lambda.X(`x.Name()`)
+  b := lambda.X(`x.Name() == "foo"`)
 	fmt.Println(f(ry))
 	fmt.Println(g(ry))
 	fmt.Println(h(ry))
+	fmt.Println(b(ry))
 }
