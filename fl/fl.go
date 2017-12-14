@@ -171,8 +171,8 @@ func binaryExpr(a *ast.BinaryExpr) func(*env) interface{} {
 		return apply(sub)
 	case token.MUL:
 		return apply(mul)
-  case token.EQL:
-    return apply(eql)
+	case token.EQL:
+		return apply(eql)
 	case token.LSS:
 		return apply(lss)
 	case token.GTR:
@@ -225,8 +225,8 @@ func callFunc(f interface{}, args []reflect.Value) interface{} {
 }
 
 func typeName(x interface{}) string {
-  v := reflect.ValueOf(x)
-  return v.Type().String()
+	v := reflect.ValueOf(x)
+	return v.Type().String()
 }
 
 func add(a interface{}, b interface{}) interface{} {
@@ -270,8 +270,8 @@ func eql(a interface{}, b interface{}) interface{} {
 		return a.(float64) == asFloat64(b)
 	case int:
 		return a.(int) == asInt(b)
-  case string:
-    return a.(string) == asString(b)
+	case string:
+		return a.(string) == asString(b)
 	default:
 		panic(fmt.Errorf("can't compare these: %v(%s) == %v(%s)", a, typeName(a), b, typeName(b)))
 	}

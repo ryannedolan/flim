@@ -22,6 +22,6 @@ func main() {
 	d := fl.Iter(c).Map(lambda.X(`x + 1`)).Array()
 	fmt.Println(d)
 
-	e := fl.List(d).Reverse().Array()
+	e := fl.Iter(d).Reverse().Array()
 	fmt.Println(e)
 }

@@ -15,14 +15,20 @@ func (p Person) Name() string {
 	return p.name
 }
 
+func foo() string {
+	return "ryanne"
+}
+
 func main() {
 	ry := Person{"ryanne", 33, func() string { return "F!" }}
 	f := lambda.X(`x.Age`)
 	g := lambda.X(`x.F()`)
 	h := lambda.X(`x.Name()`)
-  b := lambda.X(`x.Name() == "foo"`)
+	b := lambda.X(`x.Name() == "foo"`)
+	c := lambda.XY(`x.Name() == y()`)
 	fmt.Println(f(ry))
 	fmt.Println(g(ry))
 	fmt.Println(h(ry))
 	fmt.Println(b(ry))
+	fmt.Println(c(ry, foo))
 }

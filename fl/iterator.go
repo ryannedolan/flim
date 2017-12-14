@@ -14,7 +14,6 @@ type Iterator struct {
 }
 
 type chanIterable struct {
-	*Iterator
 	ch  chan interface{}
 	pos interface{}
 }
@@ -25,7 +24,6 @@ type node struct {
 }
 
 type listIterable struct {
-	*Iterator
 	head *node
 	v    interface{}
 }
@@ -81,7 +79,7 @@ func (it *Iterator) Array() []interface{} {
 	return res
 }
 
-func (it *listIterable) Chan() chan interface{} {
+func (it *Iterator) Chan() chan interface{} {
 	ch := make(chan interface{}, 0)
 	go func() {
 		for it.Next() {
@@ -128,14 +126,6 @@ func (it listIterable) Pos() interface{} {
 	return it.v
 }
 
-func List(arr []interface{}) *Iterator {
-	list := EmptyList()
-	for i := len(arr) - 1; i >= 0; i-- {
-		list.Push(arr[i])
-	}
-	return &Iterator{list}
-}
-
 func EmptyList() *listIterable {
 	return &listIterable{}
 }
@@ -149,10 +139,6 @@ func Range(i int, j int) *Iterator {
 	return &Iterator{&chanIterable{ch: ch}}
 }
 
-func newChanIterator(ch chan interface{}) *Iterator {
-	return &Iterator{&chanIterable{ch: ch}}
-}
-
 func Iter(arr interface{}) *Iterator {
 	switch arr.(type) {
 	case []interface{}:
@@ -161,28 +147,28 @@ func Iter(arr interface{}) *Iterator {
 			ch <- e
 		}
 		close(ch)
-		return newChanIterator(ch)
+		return &Iterator{&chanIterable{ch: ch}}
 	case []float64:
 		ch := make(chan interface{}, len(arr.([]float64)))
 		for _, e := range arr.([]float64) {
 			ch <- e
 		}
 		close(ch)
-		return newChanIterator(ch)
+		return &Iterator{&chanIterable{ch: ch}}
 	case []int:
 		ch := make(chan interface{}, len(arr.([]int)))
 		for _, e := range arr.([]int) {
 			ch <- e
 		}
 		close(ch)
-		return newChanIterator(ch)
+		return &Iterator{&chanIterable{ch: ch}}
 	case []string:
 		ch := make(chan interface{}, len(arr.([]string)))
 		for _, e := range arr.([]string) {
 			ch <- e
 		}
 		close(ch)
-		return newChanIterator(ch)
+		return &Iterator{&chanIterable{ch: ch}}
 	default:
 		panic(fmt.Errorf("dunno how to iterate over %v", arr))
 	}
@@ -196,7 +182,7 @@ func (it *Iterator) mapf(f func(interface{}) interface{}) *Iterator {
 		}
 		close(out)
 	}()
-	return newChanIterator(out)
+	return &Iterator{&chanIterable{ch: out}}
 }
 
 func f1(expr string) func(interface{}) interface{} {
@@ -290,7 +276,7 @@ func (it *Iterator) filter(f func(interface{}) interface{}) *Iterator {
 		}
 		close(out)
 	}()
-	return newChanIterator(out)
+	return &Iterator{&chanIterable{ch: out}}
 }
 
 func (it *Iterator) fold(z interface{}, f func(x interface{}, y interface{}) interface{}) *Iterator {
@@ -303,5 +289,5 @@ func (it *Iterator) fold(z interface{}, f func(x interface{}, y interface{}) int
 		out <- z
 		close(out)
 	}()
-	return newChanIterator(out)
+	return &Iterator{&chanIterable{ch: out}}
 }
