@@ -2,6 +2,7 @@ package fl
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Iterable interface {
@@ -28,7 +29,7 @@ type listIterable struct {
 	v    interface{}
 }
 
-func (it *Iterator) Map(arg interface{}) *Iterator {
+func (it Iterator) Map(arg interface{}) *Iterator {
 	switch arg.(type) {
 	case string:
 		return it.mapf(f1(arg.(string)))
@@ -37,7 +38,7 @@ func (it *Iterator) Map(arg interface{}) *Iterator {
 	}
 }
 
-func (it *Iterator) Filter(arg interface{}) *Iterator {
+func (it Iterator) Filter(arg interface{}) *Iterator {
 	switch arg.(type) {
 	case string:
 		return it.filter(f1(arg.(string)))
@@ -46,7 +47,7 @@ func (it *Iterator) Filter(arg interface{}) *Iterator {
 	}
 }
 
-func (it *Iterator) Fold(a interface{}, arg interface{}) *Iterator {
+func (it Iterator) Fold(a interface{}, arg interface{}) *Iterator {
 	switch arg.(type) {
 	case string:
 		return it.fold(a, f2(arg.(string)))
@@ -55,7 +56,7 @@ func (it *Iterator) Fold(a interface{}, arg interface{}) *Iterator {
 	}
 }
 
-func (it *Iterator) Reverse() *Iterator {
+func (it Iterator) Reverse() *Iterator {
 	list := EmptyList()
 	for it.Next() {
 		list.Push(it.Pos())
@@ -63,7 +64,7 @@ func (it *Iterator) Reverse() *Iterator {
 	return &Iterator{list}
 }
 
-func (it *Iterator) Floats() []float64 {
+func (it Iterator) Floats() []float64 {
 	res := make([]float64, 0)
 	for it.Next() {
 		res = append(res, asFloat64(it.Pos()))
@@ -71,7 +72,23 @@ func (it *Iterator) Floats() []float64 {
 	return res
 }
 
-func (it *Iterator) Array() []interface{} {
+func (it Iterator) Ints() []int {
+	res := make([]int, 0)
+	for it.Next() {
+		res = append(res, asInt(it.Pos()))
+	}
+	return res
+}
+
+func (it Iterator) Strings() []string {
+	res := make([]string, 0)
+	for it.Next() {
+		res = append(res, asString(it.Pos()))
+	}
+	return res
+}
+
+func (it Iterator) Array() []interface{} {
 	res := make([]interface{}, 0)
 	for it.Next() {
 		res = append(res, it.Pos())
@@ -79,7 +96,7 @@ func (it *Iterator) Array() []interface{} {
 	return res
 }
 
-func (it *Iterator) Chan() chan interface{} {
+func (it Iterator) Chan() chan interface{} {
 	ch := make(chan interface{}, 0)
 	go func() {
 		for it.Next() {
@@ -90,10 +107,31 @@ func (it *Iterator) Chan() chan interface{} {
 	return ch
 }
 
-func (it *chanIterable) List() *Iterator {
+func (it Iterator) String() string {
+	switch it.Iterable.(type) {
+	case *chanIterable:
+		return it.Iterable.(*chanIterable).String()
+	case *listIterable:
+		return it.Iterable.(*listIterable).String()
+	default:
+		panic(fmt.Errorf("dunno how to stringify %v", it))
+	}
+}
+
+func (it *chanIterable) String() string {
+	return "Stream(...)"
+}
+
+func (it *listIterable) String() string {
+	it2 := &Iterator{it}
+	return fmt.Sprintf("List(%s)", strings.Join(it2.Strings(), ", "))
+}
+
+func (it Iterator) List() *Iterator {
 	list := EmptyList()
-	for it.Next() {
-		list.Push(it.Pos())
+	it2 := it.Reverse()
+	for it2.Next() {
+		list.Push(it2.Pos())
 	}
 	return &Iterator{list}
 }
@@ -168,6 +206,35 @@ func Iter(arr interface{}) *Iterator {
 			ch <- e
 		}
 		close(ch)
+		return &Iterator{&chanIterable{ch: ch}}
+	case chan interface{}:
+		return &Iterator{&chanIterable{ch: arr.(chan interface{})}}
+	case chan float64:
+		ch := make(chan interface{})
+		go func() {
+			for x := range arr.(chan float64) {
+				ch <- x
+			}
+			close(ch)
+		}()
+		return &Iterator{&chanIterable{ch: ch}}
+	case chan int:
+		ch := make(chan interface{})
+		go func() {
+			for x := range arr.(chan int) {
+				ch <- x
+			}
+			close(ch)
+		}()
+		return &Iterator{&chanIterable{ch: ch}}
+	case chan string:
+		ch := make(chan interface{})
+		go func() {
+			for x := range arr.(chan string) {
+				ch <- x
+			}
+			close(ch)
+		}()
 		return &Iterator{&chanIterable{ch: ch}}
 	default:
 		panic(fmt.Errorf("dunno how to iterate over %v", arr))

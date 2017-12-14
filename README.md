@@ -9,7 +9,8 @@ Flim turns strings like "x+y" into lambdas:
 
 You can apply lambdas to chans:
 
-    fl.Range(1, 100).Filter(`x < 50`).Map(`x*x`).Fold(0, `x + y`).Array()
+    ch := fl.Range(1, 100).Chan()
+    fl.Iter(ch).Filter(`x < 50`).Map(`x*x`).Fold(0, `x + y`).Array()
     -> {40425}
 
 You can also apply normal Go functions:

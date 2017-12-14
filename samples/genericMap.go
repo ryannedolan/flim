@@ -22,6 +22,21 @@ func main() {
 	d := fl.Iter(c).Map(lambda.X(`x + 1`)).Array()
 	fmt.Println(d)
 
-	e := fl.Iter(d).Reverse().Array()
+	e := fl.Iter(d).Reverse().Ints()
 	fmt.Println(e)
+
+	ch := make(chan int, 5)
+	for _, x := range e {
+		ch <- x
+	}
+	close(ch)
+
+	f := fl.Iter(ch).Map(`x + 1`).Array()
+	fmt.Println(f)
+
+	g := fl.Iter(f)
+	fmt.Println(g) // printing an chan Iterator directly
+
+	h := g.List()
+	fmt.Println(h) // printing a list Iterator directly
 }
