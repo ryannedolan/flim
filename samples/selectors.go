@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ryannedolan/flim/lambda"
+  "github.com/ryannedolan/flim/fl"
 )
 
 type Person struct {
@@ -21,11 +21,11 @@ func foo() string {
 
 func main() {
 	ry := Person{"ryanne", 33, func() string { return "F!" }}
-	f := lambda.X(`x.Age`)
-	g := lambda.X(`x.F()`)
-	h := lambda.X(`x.Name()`)
-	b := lambda.X(`x.Name() == "foo"`)
-	c := lambda.XY(`x.Name() == y()`)
+	f := fl.Lambda(`x.Age`)
+	g := fl.Lambda(`x.F()`)
+	h := fl.Lambda(`x.Name()`)
+	b := fl.Lambda(`x.Name() == "foo"`)
+	c := fl.Lambda(`x.Name() == y()`)
 	fmt.Println(f(ry))
 	fmt.Println(g(ry))
 	fmt.Println(h(ry))

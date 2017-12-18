@@ -10,29 +10,7 @@ import (
 	"strconv"
 )
 
-// limited to a small number of values to avoid map lookups
-type env struct {
-	X interface{}
-	Y interface{}
-	Z interface{}
-}
-
-// construct an env with X = x
-func X(x interface{}) *env {
-	return &env{X: x}
-}
-
-// construct an env with X = x, Y = y
-func XY(x interface{}, y interface{}) *env {
-	return &env{X: x, Y: y}
-}
-
-// construct an env with X = x, Y = y, Z = z
-func XYZ(x interface{}, y interface{}, z interface{}) *env {
-	return &env{X: x, Y: y, Z: z}
-}
-
-func Lambda(s string) func(*env) interface{} {
+func Lambda(s string) func(...interface{}) interface{} {
 	e, err := parser.ParseExpr(s)
 	if err != nil {
 		panic(err)
@@ -44,7 +22,7 @@ func Lambda(s string) func(*env) interface{} {
 	return res
 }
 
-func compile(e ast.Expr) func(*env) interface{} {
+func compile(e ast.Expr) func(...interface{}) interface{} {
 	switch e.(type) {
 	case *ast.BinaryExpr:
 		return binaryExpr(e.(*ast.BinaryExpr))
@@ -70,7 +48,7 @@ func asFloat64(a interface{}) float64 {
 	case int:
 		return float64(a.(int))
 	default:
-		panic(fmt.Errorf("expected float64, got %v", a))
+		panic(fmt.Errorf("expected float64, got %T", a))
 	}
 }
 
@@ -79,7 +57,7 @@ func asBool(a interface{}) bool {
 	case bool:
 		return a.(bool)
 	default:
-		panic(fmt.Errorf("expected bool, got %v", a))
+		panic(fmt.Errorf("expected bool, got %T", a))
 	}
 }
 
@@ -90,29 +68,37 @@ func asInt(a interface{}) int {
 	case float64:
 		coerced := int(a.(float64))
 		if float64(coerced) != a.(float64) {
-			panic(fmt.Errorf("can't coerce %v into an int", a))
+			panic(fmt.Errorf("can't coerce %T into an int", a))
 		}
 		return coerced
 	default:
-		panic(fmt.Errorf("expected int, got %v", a))
+		panic(fmt.Errorf("expected int, got %T", a))
 	}
 }
 
-func wrap(a interface{}) func(e *env) interface{} {
-	return func(e *env) interface{} { return a }
+func wrap(a interface{}) func(...interface{}) interface{} {
+	return func(args ...interface{}) interface{} { return a }
 }
 
-func lookup(ident string) func(e *env) interface{} {
+func lookup(ident string) func(args ...interface{}) interface{} {
+  var i int
 	switch ident {
 	case "x":
-		return func(e *env) interface{} { return e.X }
+    i = 0
 	case "y":
-		return func(e *env) interface{} { return e.Y }
+    i = 1
 	case "z":
-		return func(e *env) interface{} { return e.Z }
+    i = 2
 	default:
 		panic(fmt.Errorf("unknown identifier %s", ident))
 	}
+  return func(args ...interface{}) interface{} {
+    if i < len(args) {
+      return args[i]
+    } else {
+      panic(fmt.Errorf("unbound variable %s", ident))
+    }
+  }
 }
 
 func selectorLookup(x interface{}, name string) interface{} {
@@ -129,7 +115,7 @@ func asString(a interface{}) string {
 	return fmt.Sprintf("%v", a)
 }
 
-func basicLit(e *ast.BasicLit) func(*env) interface{} {
+func basicLit(e *ast.BasicLit) func(...interface{}) interface{} {
 	switch e.Kind {
 	case token.FLOAT:
 		f, err := strconv.ParseFloat(e.Value, 64)
@@ -154,15 +140,15 @@ func basicLit(e *ast.BasicLit) func(*env) interface{} {
 	}
 }
 
-func ident(e *ast.Ident) func(e *env) interface{} {
+func ident(e *ast.Ident) func(args ...interface{}) interface{} {
 	return lookup(e.Name)
 }
 
-func binaryExpr(a *ast.BinaryExpr) func(*env) interface{} {
+func binaryExpr(a *ast.BinaryExpr) func(...interface{}) interface{} {
 	x := compile(a.X)
 	y := compile(a.Y)
-	apply := func(f func(interface{}, interface{}) interface{}) func(e *env) interface{} {
-		return func(e *env) interface{} { return f(x(e), y(e)) }
+	apply := func(f func(interface{}, interface{}) interface{}) func(...interface{}) interface{} {
+		return func(args ...interface{}) interface{} { return f(x(args...), y(args...)) }
 	}
 	switch a.Op {
 	case token.ADD:
@@ -186,25 +172,25 @@ func binaryExpr(a *ast.BinaryExpr) func(*env) interface{} {
 	}
 }
 
-func selectorExpr(a *ast.SelectorExpr) func(*env) interface{} {
+func selectorExpr(a *ast.SelectorExpr) func(...interface{}) interface{} {
 	x := compile(a.X)
-	return func(e *env) interface{} {
-		return selectorLookup(x(e), a.Sel.Name)
+	return func(args ...interface{}) interface{} {
+		return selectorLookup(x(args...), a.Sel.Name)
 	}
 }
 
-func callExpr(a *ast.CallExpr) func(*env) interface{} {
+func callExpr(a *ast.CallExpr) func(...interface{}) interface{} {
 	f := compile(a.Fun)
-	args := make([]func(*env) interface{}, len(a.Args))
+	args := make([]func(...interface{}) interface{}, len(a.Args))
 	for _, arg := range a.Args {
 		args = append(args, compile(arg))
 	}
-	return func(e *env) interface{} {
+	return func(args2 ...interface{}) interface{} {
 		vals := make([]reflect.Value, len(args))
 		for i, v := range args {
-			vals[i] = reflect.ValueOf(v(e))
+			vals[i] = reflect.ValueOf(v(args2...))
 		}
-		return callFunc(f(e), vals)
+		return callFunc(f(args2...), vals)
 	}
 }
 
@@ -224,11 +210,6 @@ func callFunc(f interface{}, args []reflect.Value) interface{} {
 	return res
 }
 
-func typeName(x interface{}) string {
-	v := reflect.ValueOf(x)
-	return v.Type().String()
-}
-
 func add(a interface{}, b interface{}) interface{} {
 	switch a.(type) {
 	case float64:
@@ -238,7 +219,7 @@ func add(a interface{}, b interface{}) interface{} {
 	case string:
 		return asString(a) + asString(b)
 	default:
-		panic(fmt.Errorf("can't add these: %v + %v", a, b))
+		panic(fmt.Errorf("can't add these: %T + %T", a, b))
 	}
 }
 
@@ -249,7 +230,7 @@ func sub(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) - asInt(b)
 	default:
-		panic(fmt.Errorf("can't subtract these: %v - %v", a, b))
+		panic(fmt.Errorf("can't subtract these: %T - %T", a, b))
 	}
 }
 
@@ -260,7 +241,7 @@ func mul(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) * asInt(b)
 	default:
-		panic(fmt.Errorf("can't multiply these: %v * %v", a, b))
+		panic(fmt.Errorf("can't multiply these: %T * %T", a, b))
 	}
 }
 
@@ -273,7 +254,7 @@ func eql(a interface{}, b interface{}) interface{} {
 	case string:
 		return a.(string) == asString(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %v(%s) == %v(%s)", a, typeName(a), b, typeName(b)))
+		panic(fmt.Errorf("can't compare these: %T == %T", a, b)) 
 	}
 }
 
@@ -284,7 +265,7 @@ func gtr(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) > asInt(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %v > %v", a, b))
+		panic(fmt.Errorf("can't compare these: %T > %T", a, b))
 	}
 }
 
@@ -295,7 +276,7 @@ func geq(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) >= asInt(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %v >= %v", a, b))
+		panic(fmt.Errorf("can't compare these: %T >= %T", a, b))
 	}
 }
 
@@ -306,7 +287,7 @@ func lss(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) < asInt(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %v < %v", a, b))
+		panic(fmt.Errorf("can't compare these: %T < %T", a, b))
 	}
 }
 
@@ -317,6 +298,6 @@ func leq(a interface{}, b interface{}) interface{} {
 	case int:
 		return a.(int) <= asInt(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %v <= %v", a, b))
+		panic(fmt.Errorf("can't compare these: %T <= %T", a, b))
 	}
 }

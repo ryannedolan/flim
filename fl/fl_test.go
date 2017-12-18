@@ -24,7 +24,7 @@ func TestLiteralConcatination(t *testing.T) {
 }
 
 func TestXYAddition(t *testing.T) {
-	a := Lambda(`x + y`)(XY(1, 2))
+	a := Lambda(`x + y`)(1, 2)
 	if a.(int) != 3 {
 		t.Fatal("x + y should be 3")
 	}

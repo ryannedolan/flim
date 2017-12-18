@@ -3,6 +3,7 @@ package fl
 import (
 	"fmt"
 	"strings"
+  "reflect"
 )
 
 type Iterable interface {
@@ -255,14 +256,14 @@ func (it *Iterator) mapf(f func(interface{}) interface{}) *Iterator {
 func f1(expr string) func(interface{}) interface{} {
 	f := Lambda(expr)
 	return func(x interface{}) interface{} {
-		return f(X(x))
+		return f(x)
 	}
 }
 
 func f2(expr string) func(interface{}, interface{}) interface{} {
 	f := Lambda(expr)
 	return func(x interface{}, y interface{}) interface{} {
-		return f(XY(x, y))
+		return f(x, y)
 	}
 }
 
@@ -270,6 +271,10 @@ func eraseF1(f interface{}) func(interface{}) interface{} {
 	switch f.(type) {
 	case func(interface{}) interface{}:
 		return f.(func(interface{}) interface{})
+  case func(...interface{}) interface{}:
+    return func(x interface{}) interface{} {
+      return f.(func(...interface{}) interface{})(x)
+    }
 	case func(float64) float64:
 		return func(x interface{}) interface{} {
 			return f.(func(float64) float64)(asFloat64(x))
@@ -295,7 +300,7 @@ func eraseF1(f interface{}) func(interface{}) interface{} {
 			return f.(func(interface{}) bool)(x)
 		}
 	default:
-		panic(fmt.Errorf("dunno how to erase %v", f))
+		panic(fmt.Errorf("dunno how to erase %v", reflect.TypeOf(f)))
 	}
 }
 
