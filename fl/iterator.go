@@ -2,8 +2,8 @@ package fl
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
-  "reflect"
 )
 
 type Iterable interface {
@@ -271,10 +271,10 @@ func eraseF1(f interface{}) func(interface{}) interface{} {
 	switch f.(type) {
 	case func(interface{}) interface{}:
 		return f.(func(interface{}) interface{})
-  case func(...interface{}) interface{}:
-    return func(x interface{}) interface{} {
-      return f.(func(...interface{}) interface{})(x)
-    }
+	case func(...interface{}) interface{}:
+		return func(x interface{}) interface{} {
+			return f.(func(...interface{}) interface{})(x)
+		}
 	case func(float64) float64:
 		return func(x interface{}) interface{} {
 			return f.(func(float64) float64)(asFloat64(x))

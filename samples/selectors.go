@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-  "github.com/ryannedolan/flim/fl"
+	"github.com/ryannedolan/flim/fl"
 )
 
 type Person struct {

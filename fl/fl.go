@@ -81,24 +81,24 @@ func wrap(a interface{}) func(...interface{}) interface{} {
 }
 
 func lookup(ident string) func(args ...interface{}) interface{} {
-  var i int
+	var i int
 	switch ident {
 	case "x":
-    i = 0
+		i = 0
 	case "y":
-    i = 1
+		i = 1
 	case "z":
-    i = 2
+		i = 2
 	default:
 		panic(fmt.Errorf("unknown identifier %s", ident))
 	}
-  return func(args ...interface{}) interface{} {
-    if i < len(args) {
-      return args[i]
-    } else {
-      panic(fmt.Errorf("unbound variable %s", ident))
-    }
-  }
+	return func(args ...interface{}) interface{} {
+		if i < len(args) {
+			return args[i]
+		} else {
+			panic(fmt.Errorf("unbound variable %s", ident))
+		}
+	}
 }
 
 func selectorLookup(x interface{}, name string) interface{} {
@@ -254,7 +254,7 @@ func eql(a interface{}, b interface{}) interface{} {
 	case string:
 		return a.(string) == asString(b)
 	default:
-		panic(fmt.Errorf("can't compare these: %T == %T", a, b)) 
+		panic(fmt.Errorf("can't compare these: %T == %T", a, b))
 	}
 }
 
