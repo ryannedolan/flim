@@ -1,12 +1,14 @@
-package fl
+package future
 
 import (
 	"fmt"
 	"testing"
+  "time"
+  "github.com/ryannedolan/flim/fl"
 )
 
 func TestFutureResult(t *testing.T) {
-	f := Future()
+	f := New()
 	go f.Complete("hello!")
 	res, err := f.Wait()
 	if res != "hello!" {
@@ -18,7 +20,7 @@ func TestFutureResult(t *testing.T) {
 }
 
 func TestFutureFailure(t *testing.T) {
-	f := Future()
+	f := New()
 	go f.Fail(fmt.Errorf("boo"))
 	res, err := f.Wait()
 	if res != nil {
@@ -42,7 +44,7 @@ func TestBroadcastPromise(t *testing.T) {
 }
 
 func TestPromiseLambdaResult(t *testing.T) {
-	f := Promise(Success(Lambda(`1 + 2`)(nil)))
+	f := Promise(Success(fl.Lambda(`1 + 2`)(nil)))
 	res, _ := f.Wait()
 	if res != 3 {
 		t.Fatalf("1 + 2 was %v", res)
@@ -50,7 +52,7 @@ func TestPromiseLambdaResult(t *testing.T) {
 }
 
 func TestPromiseLambda(t *testing.T) {
-	f := Promise(Success(Lambda(`x + y`)))
+	f := Promise(Success(fl.Lambda(`x + y`)))
 	res, _ := f.Wait()
 	v := res.(func(...interface{}) interface{})(1, 2)
 	if v != 3 {
@@ -83,9 +85,32 @@ func TestFutureIter(t *testing.T) {
 	if a != "foobar" {
 		t.Fatalf("expected foobar, got %v", a)
 	}
+}
 
-	b := Promise(Failuref("foo")).Iter().Map(`x + "bar"`).Array()
-	if len(b) != 0 {
-		t.Fatalf("expected empty list, got %v", b)
-	}
+func TestFutureFromChan(t *testing.T) {
+  ch := make(chan interface{}, 1)
+  a := New()
+  a.CompleteFrom(ch, Timeout(1))
+  _, err := a.Wait()
+  if err == nil {
+    t.Fatalf("expected wait to timeout")
+  }
+
+  ch <- "foo"
+  b := New()
+  b.CompleteFrom(ch, Timeout(1*time.Second))
+  s, err2 := b.Wait()
+  if err2 != nil {
+    t.Fatal(err2)
+  }
+  if s != "foo" {
+    t.Fatalf("expected foo, got %v", s)
+  }
+}
+
+func TestFirstOf(t *testing.T) {
+  done := make(chan struct{}, 1)
+  done <- struct{}{}
+  ch := FirstOf(Timeout(time.Second), Timeout(time.Millisecond), Timeout(time.Nanosecond), done)
+  <-ch 
 }
